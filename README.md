@@ -74,4 +74,4 @@ alps-trail breakdown ./specs/my_project_spec.md -o ./output/project_tasks.yaml -
 
 ## 📜 License
 
-Apache 2.0
+Apache License 2.0
