@@ -2,7 +2,7 @@
 
 STATUS: **Work In Progress**
 
-ALPS Trail (Task Refinement and Iterative ALignment) is a CLI tool designed to process ALPS (Agile Lightweight Process Specification) documents, specifically Section 6 (Feature-Level Specification). It automatically breaks down features into executable implementation tasks, generates a Directed Acyclic Graph (DAG) for task dependencies, and outputs the task list in YAML format for local management by developers.
+ALPS Trail (Task Refinement And Iterative Linking) is a CLI tool designed to process ALPS (Agile Lightweight Process Specification) documents, specifically Section 6 (Feature-Level Specification). It automatically breaks down features into executable implementation tasks, generates a Directed Acyclic Graph (DAG) for task dependencies, and outputs the task list in YAML format for local management by developers.
 
 The primary goal is to streamline the initial planning phase of development by automating task decomposition, aiming to significantly reduce planning time and improve the clarity of tasks for developers or AI coding agents.
 
