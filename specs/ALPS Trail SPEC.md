@@ -10,6 +10,8 @@
 
 ALPS Trail (Task Refinement and Iterative ALignment) 개발 명세서
 
+---
+
 ## 섹션 2. MVP 목표 및 핵심 지표
 
 ### 2.1 목적
@@ -34,6 +36,8 @@ ALPS Trail (Task Refinement and Iterative ALignment) 개발 명세서
 6. Alex는 이 태스크 목록을 AI 코딩 에이전트에 제공하여 코드 구현을 시작합니다.
 7. 에이전트는 명확한 태스크 분해 덕분에 오류 수정 효율이 90% 향상됩니다.
 
+---
+
 ## 섹션 3. 요구사항 요약
 
 ### 3.1 핵심 기능 요구사항
@@ -50,6 +54,8 @@ ALPS Trail (Task Refinement and Iterative ALignment) 개발 명세서
 - NF2: 사용성 - 명확한 CLI 인터페이스 및 도움말 제공
 - NF3: 확장성 - 새로운 태스크 템플릿 추가 가능
 - NF4: 신뢰성 - 잘못된 입력에 대한 적절한 오류 처리
+
+---
 
 ## 섹션 4. 고수준 아키텍처
 
@@ -78,6 +84,8 @@ ALPS Trail (Task Refinement and Iterative ALignment) 개발 명세서
 - LLM 통합: Amazon Bedrock의 Claude Sonnet 3.7
 - LLM 프레임워크: LangChain, LangGraph
 - 데이터 직렬화: PyYAML
+
+---
 
 ## 섹션 5. 디자인 명세
 
@@ -132,6 +140,8 @@ CLI 도구이므로 반응형 디자인은 해당되지 않습니다. 대신 다
 - 색상 지원 및 비지원 터미널 모두 고려
 - 진행 상황 표시를 위한 프로그레스 바 구현
 
+---
+
 ## 섹션 6. 기능 수준 명세
 
 ### 6.1 ALPS 문서 파싱 및 섹션 6 추출 (F1)
@@ -154,7 +164,7 @@ CLI 도구이므로 반응형 디자인은 해당되지 않습니다. 대신 다
    - 파일 인코딩 및 형식 검증
 
 2. 섹션 6 추출
-   - 정규 표현식을 사용하여 "## Section 6" 또는 "## 섹션 6" 등의 패턴 검색
+   - LLM 을 사용하여 "## Section 6" 또는 "## 섹션 6" 등의 패턴 검색
    - 섹션 6의 시작부터 다음 주요 섹션(## Section 7 또는 문서 끝)까지 추출
 
 3. 구조화
@@ -178,11 +188,9 @@ class ALPSSubsection:
     subsection_number: str  # e.g., "6.1"
     subsection_title: str   # e.g., "Feature A (F1: Sign up via Email)"
     content: str            # Raw content
-    user_story: str
-    ui_flow: str
+    user_story: str         # User story
     technical_description: str
-    api_spec: Optional[str]
-    data_model: Optional[str]
+    complexity: Optional[str] # Complexity (e.g., "Easy", "Medium", "Hard")
 ```
 
 ### 6.2 피쳐 및 유저 스토리 분석 (F2)
@@ -399,6 +407,8 @@ features:
         status: "Not Started"
 ```
 
+---
+
 ## 섹션 7. 데이터 모델
 
 이 도구에서 사용되는 주요 데이터 모델을 정의합니다.
@@ -433,10 +443,8 @@ class ALPSSubsection:
     subsection_title: str
     content: str  # 원본 전체 내용
     user_story: str
-    ui_flow: str
     technical_description: str
-    api_spec: Optional[str]
-    data_model: Optional[str]
+    complexity: Optional[str] # Complexity (e.g., "Easy", "Medium", "Hard")
 
 # 피쳐 분석 관련 클래스
 class FeatureAnalysis:
@@ -492,6 +500,8 @@ class Project:
     features: List[Dict]  # Feature with nested tasks (각 피쳐는 요약된 설명 포함)
 ```
 
+---
+
 ## 섹션 8. API 엔드포인트 명세
 
 이 도구는 CLI 애플리케이션이므로 전통적인 API 엔드포인트는 없지만, 명령줄 인터페이스를 API로 간주하여 정의할 수 있습니다.
@@ -538,6 +548,8 @@ $ alps-breakdown process ./my_alps_doc.md --output ./tasks.yaml --verbose
 ```bash
 $ alps-breakdown --help
 ```
+
+---
 
 ## 섹션 9. 배포 및 운영
 
@@ -596,6 +608,8 @@ alps-breakdown/
 - 사용자 친화적인 오류 메시지
 - 디버깅을 위한 상세 오류 정보 (verbose 모드)
 
+---
+
 ## 섹션 10. MVP 지표
 
 ### 10.1 수집할 데이터
@@ -638,6 +652,8 @@ MVP의 성공 기준은 다음과 같습니다:
 4. **사용자 만족도**: 사용자의 80% 이상이 도구를 계속 사용할 의향이 있음
    - 측정 방법: 사용자 설문 및 인터뷰
    - 목표 값: 80% 이상 재사용 의향
+
+---
 
 ## 섹션 11. 범위 외
 

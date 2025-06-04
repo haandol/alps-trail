@@ -1,7 +1,16 @@
 [project]
 name = "alps-trail"
 version = "0.1.0"
-description = "Add your description here"
+description = "ALPS Trail (Task Refinement and Iterative ALignment) - A CLI tool to break down ALPS documents into executable implementation tasks"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "langchain-aws",
+    "langchain-core", 
+    "pydantic",
+    "boto3",
+    "pyyaml",
+    "click",
+    "rich",
+    "asyncio"
+]
