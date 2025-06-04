@@ -65,6 +65,24 @@ alps-trail breakdown <path_to_alps_doc.md> [OPTIONS]
 alps-trail breakdown ./specs/my_project_spec.md -o ./output/project_tasks.yaml -v
 ```
 
+### Go CLI
+
+A minimal CLI written in Go is available under `cmd/alps`. Build the executable
+with:
+
+```bash
+go build ./cmd/alps
+```
+
+Run the tool:
+
+```bash
+./alps-breakdown process --output tasks.yaml --verbose specs/ALPS\ Trail\ SPEC.md
+```
+
+This generates a `tasks.yaml` file using a simplified parser and task
+generator.
+
 ## 🌱 Future Plans (Out of MVP Scope)
 
 -   **Web Interface**: A browser-based UI for easier interaction.
