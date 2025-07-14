@@ -11,6 +11,8 @@ import traceback
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+import re
+from datetime import datetime
 
 from botocore.config import Config
 from langchain_aws import ChatBedrockConverse
@@ -151,19 +153,37 @@ class ALPSParser:
             logger.info("Extracting Section 6 using section splitting...")
 
             # Split document by section delimiter
-            sections = content.split('\n---\n')
+            sections = content.split("\n---\n")
 
-            # Check if we have at least 6 sections (index 5 for 6th section)
+            # Ensure we have at least 6 sections to search within
             if len(sections) < 6:
-                raise ALPSParseError(f"Document contains only {len(sections)} sections, Section 6 not found")
+                raise ALPSParseError(
+                    f"Document contains only {len(sections)} sections, Section 6 not found"
+                )
 
-            # Get the 6th section (index 5)
-            section_6_content = sections[5].strip()
+            section_6_content = None
+
+            # According to the specification, Section 6 may appear around the
+            # 5th–7th segments. Find the segment whose heading includes '6'.
+            for idx in range(4, min(7, len(sections))):
+                candidate = sections[idx].strip()
+                if not candidate:
+                    continue
+                first_line = candidate.splitlines()[0].lower()
+                if "section 6" in first_line or "섹션 6" in first_line or first_line.startswith("## 6"):
+                    section_6_content = candidate
+                    break
+
+            # Fallback to the 6th segment if no heading matched
+            if section_6_content is None and len(sections) >= 6:
+                section_6_content = sections[5].strip()
 
             if not section_6_content:
-                raise ALPSParseError("Section 6 content is empty")
+                raise ALPSParseError("Section 6 content is empty or not found")
 
-            logger.info(f"Successfully extracted Section 6: {len(section_6_content)} characters ✅")
+            logger.info(
+                f"Successfully extracted Section 6: {len(section_6_content)} characters ✅"
+            )
             return section_6_content
 
         except ALPSParseError:
@@ -199,7 +219,7 @@ class ALPSParser:
                     continue
 
                 try:
-                    # Extract ALPSSubSection from content using LLM with structured output
+                    # Extract ALPSSubsection from content using LLM with structured output
                     system_prompt = """
 You are an expert at analyzing ALPS document subsections. Extract structured information from the provided content.
 
@@ -218,7 +238,7 @@ Extract structured information from this subsection content:
 """
                     messages = [
                         SystemMessage(content=system_prompt),
-                        HumanMessage(content=human_prompt)
+                        HumanMessage(content=human_prompt),
                     ]
 
                     llm = self.llm.with_structured_output(ALPSSubsection)
@@ -226,7 +246,21 @@ Extract structured information from this subsection content:
                     logger.info(f"Response content: {response}")
                     subsections.append(response)
                 except Exception as e:
-                    logger.warning(f"Failed to parse subsection with LLM, using fallback: {str(e)}")
+                    logger.warning(
+                        f"Failed to parse subsection with LLM, using fallback: {str(e)}"
+                    )
+                    # Simple fallback parser using the subsection header
+                    lines = content.splitlines()
+                    header = lines[0] if lines else ""
+                    match = re.match(r"(?P<num>6\.\d+)\s+(?P<title>.+)", header)
+                    subsection_number = match.group("num") if match else ""
+                    subsection_title = match.group("title") if match else header
+                    fallback = ALPSSubsection(
+                        subsection_number=subsection_number,
+                        subsection_title=subsection_title,
+                        content=content,
+                    )
+                    subsections.append(fallback)
 
             logger.info(f"Successfully parsed {len(subsections)} subsections 🔍")
             return subsections
@@ -263,8 +297,6 @@ Extract structured information from this subsection content:
             subsections = await self.parse_subsections(section_6_content)
             logger.info(f"Parsed {len(subsections)} subsections")
 
-            return
-
             # Create Section 6 object
             section_6 = ALPSSection(
                 section_number="6",
@@ -279,7 +311,7 @@ Extract structured information from this subsection content:
                 "total_characters": len(content),
                 "section_6_characters": len(section_6_content),
                 "subsections_count": len(subsections),
-                "parsed_at": None  # Will be set by caller if needed
+                "parsed_at": datetime.utcnow().isoformat()
             }
 
             # Create ALPS document
