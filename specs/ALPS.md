@@ -32,9 +32,8 @@ ALPS Trail (Task Refinement and Iterative ALignment) 개발 명세서
 2. Alex는 CLI 도구를 실행하여 ALPS 문서를 입력합니다.
 3. 도구는 ALPS 문서의 섹션 6을 분석하여 DAG를 생성합니다.
 4. 생성된 DAG를 기반으로 구현 태스크 목록이 YAML 형식으로 출력됩니다.
-5. Alex는 생성된 태스크 목록을 검토하고, 90% 이상의 태스크가 추가 수정 없이 사용 가능함을 확인합니다.
-6. Alex는 이 태스크 목록을 AI 코딩 에이전트에 제공하여 코드 구현을 시작합니다.
-7. 에이전트는 명확한 태스크 분해 덕분에 오류 수정 효율이 90% 향상됩니다.
+5. CLI 에서는 아스키 테이블 형태로 태스크 목록을 볼 수 있습니다. (Claude Taskmaster 와 비슷한 형태)
+6. 개발자는 태스크 목록을 검토하고, 복잡도가 높은 태스크를 분해하여 더 작은 태스크로 분해합니다.
 
 ---
 
@@ -65,7 +64,7 @@ ALPS Trail (Task Refinement and Iterative ALignment) 개발 명세서
 +------------------+     +------------------+     +------------------+
 |                  |     |                  |     |                  |
 |  ALPS 문서 입력  | --> |  마크다운 파서   | --> |  LLM 분석 엔진   |
-|  (마크다운)      |     |  (regex)         |     |  (Claude 3.7)    |
+|  (마크다운)      |     |  (regex)         |     |  (Claude 4)    |
 |                  |     |                  |     |                  |
 +------------------+     +------------------+     +------------------+
                                                           |
@@ -81,7 +80,7 @@ ALPS Trail (Task Refinement and Iterative ALignment) 개발 명세서
 
 - 프로그래밍 언어: Python
 - 문서 파싱: 마크다운 파서 (regex 기반)
-- LLM 통합: Amazon Bedrock의 Claude Sonnet 3.7
+- LLM 통합: Amazon Bedrock의 Claude Sonnet 4
 - LLM 프레임워크: LangChain, LangGraph
 - 데이터 직렬화: PyYAML
 
@@ -113,24 +112,7 @@ CLI 도구의 기본 사용 흐름:
 
 #### 5.2.1 CLI 출력 형식
 
-```
-ALPS Feature Breakdown Tool v1.0
---------------------------------
-
-Processing: [filename.md]
-Extracting Section 6...
-Analyzing features...
-Generating DAG...
-Breaking down tasks...
-Creating YAML output...
-
-✓ Complete! Output saved to: [output_path.yaml]
-
-Summary:
-- Features processed: 5
-- Tasks generated: 23
-- Estimated dev time: 4.5 days
-```
+Corba 기능을 이용하여 ASCII 테이블 형태로 태스크 목록을 보여줍니다.
 
 ### 5.3 반응형 디자인 가이드라인
 
@@ -164,34 +146,12 @@ CLI 도구이므로 반응형 디자인은 해당되지 않습니다. 대신 다
    - 파일 인코딩 및 형식 검증
 
 2. 섹션 6 추출
-   - LLM 을 사용하여 "## Section 6" 또는 "## 섹션 6" 등의 패턴 검색
-   - 섹션 6의 시작부터 다음 주요 섹션(## Section 7 또는 문서 끝)까지 추출
+   - `---` 패턴을 기준으로 구분해서 섹션 파싱
+   - 5, 6, 7 번째 섹션에서 6 이 포함된 섹션을 섹션 6으로 인식하여 추출
 
-3. 구조화
-   - 추출된 텍스트를 기능별로 구조화
-   - 각 기능(6.1, 6.2 등)을 개별 객체로 파싱
-
-4. 오류 처리
+3. 오류 처리
    - 파일이 존재하지 않을 경우 적절한 오류 메시지 표시
    - 섹션 6을 찾을 수 없을 경우 사용자에게 알림
-
-#### 6.1.4 데이터 모델 / 스키마
-
-```python
-class ALPSSection:
-    section_number: str  # e.g., "6"
-    section_title: str   # e.g., "Feature-Level Specification"
-    content: str         # Raw content
-    subsections: List[ALPSSubsection]
-
-class ALPSSubsection:
-    subsection_number: str  # e.g., "6.1"
-    subsection_title: str   # e.g., "Feature A (F1: Sign up via Email)"
-    content: str            # Raw content
-    user_story: str         # User story
-    technical_description: str
-    complexity: Optional[str] # Complexity (e.g., "Easy", "Medium", "Hard")
-```
 
 ### 6.2 피쳐 및 유저 스토리 분석 (F2)
 
@@ -200,6 +160,8 @@ class ALPSSubsection:
 개발자로서, 나는 추출된 피쳐와 유저 스토리를 자동으로 분석하여 핵심 구현 요소를 식별하고 싶다. 그래서 각 피쳐의 복잡성과 구현 요구사항을 더 잘 이해할 수 있다.
 
 #### 6.2.2 UI 흐름
+
+
 
 1. 도구는 추출된 섹션 6 데이터를 LLM에 전달합니다.
 2. 분석 진행 상황이 터미널에 표시됩니다.
@@ -211,30 +173,21 @@ class ALPSSubsection:
    - 추출된 피쳐 데이터를 구조화된 프롬프트로 변환
    - 유저 스토리, UI 흐름, 기술적 설명 등을 포함
 
-2. Claude 3.7 호출
-   - Amazon Bedrock API를 통해 Claude Sonnet 3.7 모델 호출
+2. 섹션 6 에서 Feature 추출
+   - 각 서브 섹션 (6.1, 6.2) 가 Feature 명세를 포함하고 있음
+   - `###` 이 포함된 행을 기준으로 서브 섹션 파싱
+
+3. Claude 4 호출
+   - Amazon Bedrock API를 통해 Claude Sonnet 4 모델 호출
    - 적절한 파라미터(온도, 최대 토큰 등) 설정
 
-3. 응답 파싱
+4. 응답 파싱
    - LLM 응답을 구조화된 데이터로 변환
    - 핵심 구현 요소, 복잡성, 의존성 등 추출
 
-4. 분석 결과 저장
+5. 분석 결과 저장
    - 각 피쳐별 분석 결과를 중간 데이터 구조에 저장
    - 다음 단계(DAG 생성)를 위한 준비
-
-#### 6.2.4 데이터 모델 / 스키마
-
-```python
-class FeatureAnalysis:
-    feature_id: str  # e.g., "F1"
-    feature_name: str
-    complexity: str  # "Low", "Medium", "High"
-    key_components: List[str]
-    dependencies: List[str]  # e.g., ["F2", "F3"]
-    estimated_effort: str  # e.g., "2 days"
-    implementation_notes: str
-```
 
 ### 6.3 DAG(Directed Acyclic Graph) 생성 및 의존성 관리 (F3)
 
@@ -252,7 +205,7 @@ class FeatureAnalysis:
 
 1. LangGraph 에이전트 워크플로우 구성
    - 피쳐 분석 에이전트, 의존성 분석 에이전트, 태스크 분해 에이전트 등 여러 에이전트로 구성된 워크플로우 설계
-   - 각 에이전트는 Claude 3.7을 활용하여 특정 역할 수행
+   - 각 에이전트는 Claude 4을 활용하여 특정 역할 수행
    - 에이전트 간 상태 및 결과 공유를 위한 메모리 구성
 
 2. 의존성 분석 에이전트
@@ -268,24 +221,6 @@ class FeatureAnalysis:
 4. 결과 통합 및 최적화
    - 생성된 DAG 구조 검증 및 최적화
    - 다음 단계(태스크 분해)를 위한 데이터 준비
-
-#### 6.3.4 데이터 모델 / 스키마
-
-```python
-class DAGNode:
-    id: str
-    type: str  # "Feature" or "Task"
-    name: str
-    description: str  # 피쳐의 요약된 설명 (원본 전체 내용이 아닌 핵심 요약)
-    estimated_effort: str
-    dependencies: List[Tuple[str, DependencyType]]
-
-class DAG:
-    nodes: Dict[str, DAGNode]
-    edges: List[Tuple[str, str, DependencyType]]
-    implementation_sequence: List[str]  # Suggested implementation order
-    parallel_groups: List[List[str]]  # Groups of nodes that can be implemented in parallel
-```
 
 ### 6.4 태스크 분해 및 생성 (F4)
 
@@ -318,22 +253,6 @@ class DAG:
    - 구현 중요도 및 순서에 따른 우선순위 지정
    - 병렬 작업 가능성 고려
 
-#### 6.4.4 데이터 모델 / 스키마
-
-```python
-class Task:
-    id: str  # e.g., "T1.1" for first task of Feature 1
-    feature_id: str  # Parent feature ID
-    name: str
-    description: str
-    acceptance_criteria: List[str]
-    estimated_hours: float
-    difficulty: str  # "Easy", "Medium", "Hard"
-    dependencies: List[str]  # IDs of dependent tasks
-    priority: int  # 1 (highest) to 5 (lowest)
-    status: str  # "Not Started", "In Progress", "Completed"
-```
-
 ### 6.5 YAML 형식의 태스크 목록 출력 (F5)
 
 #### 6.5.1 사용자 스토리
@@ -365,254 +284,11 @@ class Task:
    - 총 피쳐 수, 태스크 수, 예상 개발 시간 등 계산
    - 터미널에 요약 정보 표시
 
-#### 6.5.4 데이터 모델 / 스키마
-
-YAML 출력 예시:
-```yaml
-project:
-  name: "Project Name"
-  created_at: "2023-06-15T10:30:00Z"
-  total_features: 5
-  total_tasks: 23
-  estimated_days: 4.5
-
-features:
-  - id: "F1"
-    name: "User Authentication"
-    tasks:
-      - id: "T1.1"
-        name: "Implement login form UI"
-        description: "Create a responsive login form with email and password fields"
-        acceptance_criteria:
-          - "Form includes email and password fields"
-          - "Form includes 'Login' button"
-          - "Form validates input before submission"
-        estimated_hours: 4.0
-        difficulty: "Easy"
-        dependencies: []
-        priority: 1
-        status: "Not Started"
-
-      - id: "T1.2"
-        name: "Implement login API integration"
-        description: "Connect login form to backend API"
-        acceptance_criteria:
-          - "API call is made on form submission"
-          - "Success/error responses are handled appropriately"
-          - "User is redirected on successful login"
-        estimated_hours: 6.0
-        difficulty: "Medium"
-        dependencies: ["T1.1"]
-        priority: 2
-        status: "Not Started"
-```
-
 ---
 
-## 섹션 7. 데이터 모델
+## 섹션 7. MVP 지표
 
-이 도구에서 사용되는 주요 데이터 모델을 정의합니다.
-
-| 클래스명 | 설명 | 주요 속성 |
-|---------|------|----------|
-| ALPSDocument | ALPS 문서 전체를 나타내는 클래스 | sections, metadata |
-| ALPSSection | ALPS 문서의 섹션을 나타내는 클래스 | section_number, section_title, content, subsections |
-| ALPSSubsection | 섹션 6의 각 피쳐 명세를 나타내는 클래스 | subsection_number, subsection_title, content, user_story, ui_flow, technical_description, api_spec, data_model |
-| FeatureAnalysis | 분석된 피쳐 정보를 나타내는 클래스 | feature_id, feature_name, complexity, key_components, dependencies, estimated_effort, implementation_notes |
-| DAGNode | DAG의 노드를 나타내는 클래스 | id, type, name, description, estimated_effort, dependencies |
-| DAG | 전체 DAG 구조를 나타내는 클래스 | nodes, edges, implementation_sequence, parallel_groups, bottlenecks |
-| Task | 구현 태스크를 나타내는 클래스 | id, feature_id, name, description, acceptance_criteria, estimated_hours, difficulty, dependencies, priority, status |
-| Project | 프로젝트 정보를 나타내는 클래스 | name, created_at, total_features, total_tasks, estimated_days, features |
-
-### 7.1 주요 데이터 구조
-
-```python
-# ALPS 문서 파싱 관련 클래스
-class ALPSDocument:
-    sections: Dict[str, ALPSSection]
-    metadata: Dict[str, Any]
-
-class ALPSSection:
-    section_number: str
-    section_title: str
-    content: str
-    subsections: List[ALPSSubsection]
-
-class ALPSSubsection:
-    subsection_number: str
-    subsection_title: str
-    content: str  # 원본 전체 내용
-    user_story: str
-    technical_description: str
-    complexity: Optional[str] # Complexity (e.g., "Easy", "Medium", "Hard")
-
-# 피쳐 분석 관련 클래스
-class FeatureAnalysis:
-    feature_id: str
-    feature_name: str
-    complexity: str  # "Low", "Medium", "High"
-    key_components: List[str]
-    dependencies: List[str]
-    estimated_effort: str
-    implementation_notes: str
-
-# DAG 관련 클래스
-class DependencyType(Enum):
-    STRONG = "strong"
-    WEAK = "weak"
-    NONE = "none"
-
-class DAGNode:
-    id: str
-    type: str  # "Feature" or "Task"
-    name: str
-    description: str  # 피쳐의 요약된 설명 (원본 전체 내용이 아닌 핵심 요약)
-    estimated_effort: str
-    dependencies: List[Tuple[str, DependencyType]]
-
-class DAG:
-    nodes: Dict[str, DAGNode]
-    edges: List[Tuple[str, str, DependencyType]]
-    implementation_sequence: List[str]
-    parallel_groups: List[List[str]]
-    bottlenecks: List[str]
-
-# 태스크 관련 클래스
-class Task:
-    id: str
-    feature_id: str
-    name: str
-    description: str  # 태스크의 간결한 요약 설명
-    acceptance_criteria: List[str]
-    estimated_hours: float
-    difficulty: str
-    dependencies: List[str]
-    priority: int
-    status: str
-
-# 프로젝트 관련 클래스
-class Project:
-    name: str
-    created_at: str
-    total_features: int
-    total_tasks: int
-    estimated_days: float
-    features: List[Dict]  # Feature with nested tasks (각 피쳐는 요약된 설명 포함)
-```
-
----
-
-## 섹션 8. API 엔드포인트 명세
-
-이 도구는 CLI 애플리케이션이므로 전통적인 API 엔드포인트는 없지만, 명령줄 인터페이스를 API로 간주하여 정의할 수 있습니다.
-
-| 명령어 | 설명 | 매개변수 | 출력 |
-|--------|------|---------|------|
-| `alps-breakdown process` | ALPS 문서를 처리하여 태스크 목록 생성 | `<file_path>`: ALPS 문서 경로 | 태스크 YAML 파일 |
-| `alps-breakdown --help` | 도움말 표시 | - | 도움말 텍스트 |
-| `alps-breakdown --version` | 버전 정보 표시 | - | 버전 정보 |
-| `alps-breakdown process --output <path>` | 출력 파일 경로 지정 | `<path>`: 출력 파일 경로 | 지정된 경로에 YAML 파일 |
-| `alps-breakdown process --verbose` | 상세 로그 출력 | - | 상세 로그와 함께 YAML 파일 |
-
-### 8.1 명령어 상세 설명
-
-#### 8.1.1 `alps-breakdown process <file_path>`
-
-**설명**: ALPS 문서를 처리하여 태스크 목록을 생성합니다.
-
-**매개변수**:
-- `<file_path>`: ALPS 문서 경로 (필수)
-
-**옵션**:
-- `--output, -o <path>`: 출력 파일 경로 지정 (기본값: `./tasks.yaml`)
-- `--verbose, -v`: 상세 로그 출력
-- `--format, -f <format>`: 출력 형식 지정 (yaml, json) (기본값: yaml)
-
-**반환**:
-- 성공 시: 태스크 YAML 파일 경로와 요약 정보
-- 실패 시: 오류 메시지와 종료 코드
-
-**예시**:
-```bash
-$ alps-breakdown process ./my_alps_doc.md --output ./tasks.yaml --verbose
-```
-
-#### 8.1.2 `alps-breakdown --help`
-
-**설명**: 도움말 정보를 표시합니다.
-
-**반환**:
-- 도구 사용법, 명령어 목록, 옵션 설명
-
-**예시**:
-```bash
-$ alps-breakdown --help
-```
-
----
-
-## 섹션 9. 배포 및 운영
-
-### 9.1 배포 방법
-
-이 CLI 도구는 Python 패키지로 배포되며, 다음과 같은 방법으로 설치할 수 있습니다:
-
-```bash
-# PyPI를 통한 설치
-pip install alps-breakdown
-
-# 개발 버전 설치
-pip install git+https://github.com/username/alps-breakdown.git
-```
-
-패키지는 다음과 같은 구조로 구성됩니다:
-
-```
-alps-breakdown/
-├── pyproject.toml
-├── README.md
-├── LICENSE
-├── src/
-│   └── alps_breakdown/
-│       ├── __init__.py
-│       ├── cli.py
-│       ├── parser.py
-│       ├── analyzer.py
-│       ├── dag_generator.py
-│       ├── task_generator.py
-│       └── yaml_formatter.py
-└── tests/
-    ├── __init__.py
-    ├── test_parser.py
-    ├── test_analyzer.py
-    └── ...
-```
-
-### 9.2 기본 관측성
-
-#### 9.2.1 로그
-
-- JSON 구조화된 로그
-- 로그 레벨: INFO, WARNING, ERROR, DEBUG
-- 로그 출력: 콘솔 (기본), 파일 (옵션)
-
-#### 9.2.2 모니터링
-
-- 처리 시간 측정
-- 메모리 사용량 모니터링
-- LLM API 호출 횟수 및 토큰 사용량 추적
-
-#### 9.2.3 오류 처리
-
-- 예외 캡처 및 로깅
-- 사용자 친화적인 오류 메시지
-- 디버깅을 위한 상세 오류 정보 (verbose 모드)
-
----
-
-## 섹션 10. MVP 지표
-
-### 10.1 수집할 데이터
+### 7.1 수집할 데이터
 
 MVP의 성공을 측정하기 위해 다음과 같은 데이터를 수집합니다:
 
@@ -633,7 +309,7 @@ MVP의 성공을 측정하기 위해 다음과 같은 데이터를 수집합니�
    - 오류 발생 빈도 및 유형
    - 사용자 피드백 및 만족도
 
-### 10.2 성공 기준
+### 7.2 성공 기준
 
 MVP의 성공 기준은 다음과 같습니다:
 
@@ -655,11 +331,11 @@ MVP의 성공 기준은 다음과 같습니다:
 
 ---
 
-## 섹션 11. 범위 외
+## 섹션 8. 범위 외
 
 다음 기능들은 현재 MVP 범위에 포함되지 않으며, 향후 버전에서 구현될 예정입니다:
 
-### 11.1 향후 개발 기능
+### 8.1 향후 개발 기능
 
 1. **웹 인터페이스**
    - 브라우저 기반 UI를 통한 ALPS 문서 업로드 및 태스크 생성
@@ -677,7 +353,7 @@ MVP의 성공 기준은 다음과 같습니다:
    - Model Context Protocol을 통한 에이전틱 IDE들과의 통합
    - 코드 컨텍스트 공유 및 지능형 태스크 관리
 
-### 11.2 기술적 부채
+### 8.2 기술적 부채
 
 1. **성능 최적화**
    - 대규모 ALPS 문서 처리 시 메모리 사용량 최적화
