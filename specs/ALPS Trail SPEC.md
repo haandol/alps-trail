@@ -392,7 +392,7 @@ features:
         dependencies: []
         priority: 1
         status: "Not Started"
-      
+
       - id: "T1.2"
         name: "Implement login API integration"
         description: "Connect login form to backend API"

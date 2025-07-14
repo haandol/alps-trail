@@ -23,7 +23,7 @@ The primary goal is to streamline the initial planning phase of development by a
 ## 🛠️ Tech Stack
 
 -   **Language**: Python 3.13
--   **LLM Integration**: Amazon Bedrock (Claude 3 Sonnet)
+-   **LLM Integration**: Amazon Bedrock (Claude 4 Sonnet)
 -   **LLM Framework**: LangChain, LangGraph
 -   **Document Parsing**: Regex-based Markdown parsing
 -   **Data Serialization**: PyYAML
